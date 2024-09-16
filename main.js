@@ -44,18 +44,24 @@ async function complete_task_video(token) {
 
 const spin_wheel = async (token, tickets) => {
   for (let i = 1; i <= tickets; i++) {
-    await new Promise((resolve) => setTimeout(() => resolve(), 4000));
     try {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
       const response = await Post(
         "https://api.agent301.org/wheel/spin",
         {},
         token
       );
-      console.log("response", response.data.result.reward);
+      const reward = response.data.result.reward
+      console.log("response", reward);
+      if (reward === "t1" || reward === "t3") {
+        spin_wheel(token, tickets)
+      }
     } catch (error) {
-      console.log("Không thể spin wheel");
+      console.log("Try again...");
     }
   }
+  console.log("Spin wheel completed");
+  return true;
 };
 
 const get_tasks_wheel = async (token) => {
@@ -162,11 +168,11 @@ const complete_task_daily = async (token) => {
 async function main() {
   console.log("Starting...");
   for (const user of users) {
-    Promise.all([
-      await complete_task_video(user),
-      await claim_task_wheel(user),
-      await complete_task_daily(user),
-    ]);
+    // Promise.all([
+    //   await complete_task_video(user),
+    //   await claim_task_wheel(user),
+    //   await complete_task_daily(user),
+    // ]);
     const tickets = await getMe(user);
     console.log("tickets", tickets);
     const response = await spin_wheel(user, tickets.tickets);
