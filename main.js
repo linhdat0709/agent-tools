@@ -1,8 +1,8 @@
 const fs = require("fs");
-const axios = require("axios");
 const { Post } = require("./config_axios");
 
 const users = JSON.parse(fs.readFileSync("user.json", "utf8"));
+const iframes = JSON.parse(fs.readFileSync("iframe.json", "utf8"));
 
 const getMe = async (token) => {
   try {
@@ -51,10 +51,10 @@ const spin_wheel = async (token, tickets) => {
         {},
         token
       );
-      const reward = response.data.result.reward
+      const reward = response.data.result.reward;
       console.log("response", reward);
       if (reward === "t1" || reward === "t3") {
-        spin_wheel(token, tickets)
+        spin_wheel(token, tickets);
       }
     } catch (error) {
       console.log("Try again...");
@@ -167,16 +167,21 @@ const complete_task_daily = async (token) => {
 };
 async function main() {
   console.log("Starting...");
-  for (const user of users) {
-    // Promise.all([
-    //   await complete_task_video(user),
-    //   await claim_task_wheel(user),
-    //   await complete_task_daily(user),
-    // ]);
+  for (const iframe of iframes) {
+    const web_app_data = Object.fromEntries(
+      new URLSearchParams(iframe.replace(/.*tgWebAppData/, "tgWebAppData"))
+    );
+
+    const user = web_app_data.tgWebAppData;
+    Promise.all([
+      await complete_task_video(user),
+      await claim_task_wheel(user),
+      await complete_task_daily(user),
+    ]);
     const tickets = await getMe(user);
     console.log("tickets", tickets);
     const response = await spin_wheel(user, tickets.tickets);
-    if (response) {
+    if (response > 0) {
       const new_current_tickets = await getMe(user);
       console.log("new_current_tickets", new_current_tickets.tickets);
       await spin_wheel(user, new_current_tickets.tickets);
